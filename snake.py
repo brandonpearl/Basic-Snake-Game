@@ -1,5 +1,6 @@
 from tkinter import *
-from random import choice
+from tkinter import font
+from random import choice, randint
 from time import sleep
 
 l = "Left"
@@ -43,7 +44,7 @@ class SnakeLinks:
             self.tail = None
         else:
             self.tail = self.tail.prev
-            self.tail.next = self.tail
+            self.tail.next = self
         self.size -= 1
         return x, y
 
@@ -65,9 +66,13 @@ class SnakeLinks:
 class game:
     def __init__(self, boardSizeX=15, boardSizeY=15, safety=False, factor=20):
         self.root = Tk()
+        self.root.title("SNAKE!")
+        #self.root.iconbitmap(default="snake.ico")
         self.sizeX = max(boardSizeX, 5)
         self.sizeY = max(boardSizeY, 5)
         self.factor = factor
+        self.smallFontFactor = 1.5
+        self.largeFontFactor = 4.5
         self.running = False
         self.score = 0
         self.grid = [[False for _ in range(self.sizeY)] for _ in range(self.sizeX)]
@@ -86,6 +91,9 @@ class game:
 
         self.console = Frame(bg="grey")
         self.console.pack()
+
+        self.appFont = font.Font(self.console, family="Arial", size=int(self.smallFontFactor*self.factor))
+        self.endFont = font.Font(self.console, family="Arial", size=int(self.largeFontFactor*self.factor))
 
         self.scoreBoard = Label(self.console, text="Score: " + str(self.score), fg="black", bg="grey")
         self.scoreBoard.pack(side="top")
@@ -111,7 +119,6 @@ class game:
         self.root.mainloop()
 
     def handler(self, event):
-        #Prioritizes left
         key = event.keysym
         tempL = False
         tempR = False
@@ -164,8 +171,10 @@ class game:
             removePos = self.snake.moveHere(newPos[0], newPos[1])
             self.grid[removePos[0]][removePos[1]] = False if not tailEqualNewHead else True
 
+        if self.foodX < 0 and self.foodY < 0:
+            self.foodX, self.foodY = self.newFood()
 
-    def newFood(self):
+    def newFood1(self):
         okay = []
         boundsX = [1, self.sizeX-1] if self.safety else [0, self.sizeX]
         boundsY = [1, self.sizeY-1] if self.safety else [0, self.sizeY]
@@ -175,15 +184,37 @@ class game:
                     okay += [(x, y)]
         return choice(okay)
 
+    def newFood(self):
+        i = 0
+        while i<1000:
+            boundsX = [1, self.sizeX-2] if self.safety else [0, self.sizeX-1]
+            boundsY = [1, self.sizeY-2] if self.safety else [0, self.sizeY-1]
+            x = randint(boundsX[0], boundsX[1])
+            y = randint(boundsX[0], boundsY[1])
+            if not self.grid[x][y]:
+                return x, y
+        return -500, -500
+
+
     def drawScreen(self):
         self.board.delete(ALL)
+        #colors = ["cyan", "yellow"]
+        #colorIndex = 0
+        #current = self.snake.head
+        #while current != self.snake:
+        #    x = current.x
+        #    y = current.y
+        #    self.board.create_rectangle(x*self.factor, y*self.factor, (x+1)*self.factor, (y+1)*self.factor, fill=colors[colorIndex])
+        #    current = current.next
+        #    colorIndex = 1 - colorIndex
         for x in range(self.sizeX):
             for y in range(self.sizeY):
                 if self.grid[x][y]:
                     self.board.create_rectangle(x*self.factor, y*self.factor, (x+1)*self.factor, (y+1)*self.factor, fill="green")
         x, y = self.snake.getHeadLocation()
-        self.board.create_rectangle(x*self.factor, y*self.factor, (x+1)*self.factor, (y+1)*self.factor, fill="dark green")
-        self.board.create_rectangle(self.foodX*self.factor, self.foodY*self.factor, (self.foodX+1)*self.factor, (self.foodY+1)*self.factor, fill="red")
+        self.board.create_rectangle(x*self.factor, y*self.factor, (x+1)*self.factor, (y+1)*self.factor, fill="#556B2F")
+        if self.foodX >= 0 and self.foodY >= 0:
+            self.board.create_rectangle(self.foodX*self.factor, self.foodY*self.factor, (self.foodX+1)*self.factor, (self.foodY+1)*self.factor, fill="red")
 
     def null(self):
         return
@@ -191,10 +222,12 @@ class game:
     def countdown(self):
         if self.timeToStart > 0:
             self.drawScreen()
-            self.board.create_text(int(self.sizeX/2), int(self.sizeY/2), fill="white", text=str(self.timeToStart))
+            self.board.create_text(int(self.sizeX/2)*self.factor, int(self.sizeY/2)*self.factor, fill="white", \
+                 text=str(self.timeToStart) if self.timeToStart > 1 else "Fun!", font=self.appFont)
             self.timeToStart -= 1
-            print(self.timeToStart)
             self.root.after(1000, self.countdown)
+        else:
+            self.run()
 
     def start(self):
         self.board.focus_set()
@@ -215,8 +248,8 @@ class game:
         self.grid[int(self.sizeX/2)][int(self.sizeY/2)] = True
         self.snake.moveHead(SnakeLink(int(self.sizeX/2), int(self.sizeY/2)))
         self.foodX, self.foodY = self.newFood()
-        #self.root.after(0, self.countdown)
-        self.run()
+        self.countdown()
+
     def run(self):
         if self.running:
             if self.count == self.inverseSpeed-1:
@@ -232,6 +265,8 @@ class game:
         
     def end(self):
         self.board.delete(ALL)
+        self.board.create_text(int(self.sizeX/2)*self.factor, int(self.sizeY/2)*self.factor, fill="white", \
+                 text="GAME OVER", font=self.endFont)
         self.snake = SnakeLinks()
         self.timeToStart = 5
         self.LEFT = True
@@ -242,3 +277,7 @@ class game:
         self.startButton.config(text="Start", command=self.start)
         
 snake = game(50, 30, True)
+
+
+
+
