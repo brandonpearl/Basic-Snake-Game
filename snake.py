@@ -1,12 +1,14 @@
 from tkinter import *
 from tkinter import font
 from random import choice, randint
-from time import sleep
+from time import time as timer
 
 l = "Left"
 r = "Right"
 u = "Up"
 d = "Down"
+
+time = lambda: int(timer()*1000.0)
 
 class SnakeLink:
     def __init__(self, x, y):
@@ -83,11 +85,12 @@ class game:
         self.RIGHT = False
         self.UP = False
         self.DOWN = False
-        self.count = 0
-        self.inverseSpeed = 10
+        self.inverseSpeed = 50
         self.lastMove = ""
         self.safety = safety
         self.timeToStart = 5
+        self.refTime = -1
+        self.currTime = -1
 
         self.console = Frame(bg="grey")
         self.console.pack()
@@ -119,6 +122,8 @@ class game:
         self.root.mainloop()
 
     def handler(self, event):
+        if not self.running:
+            return
         key = event.keysym
         tempL = False
         tempR = False
@@ -198,15 +203,6 @@ class game:
 
     def drawScreen(self):
         self.board.delete(ALL)
-        #colors = ["cyan", "yellow"]
-        #colorIndex = 0
-        #current = self.snake.head
-        #while current != self.snake:
-        #    x = current.x
-        #    y = current.y
-        #    self.board.create_rectangle(x*self.factor, y*self.factor, (x+1)*self.factor, (y+1)*self.factor, fill=colors[colorIndex])
-        #    current = current.next
-        #    colorIndex = 1 - colorIndex
         for x in range(self.sizeX):
             for y in range(self.sizeY):
                 if self.grid[x][y]:
@@ -227,6 +223,10 @@ class game:
             self.timeToStart -= 1
             self.root.after(1000, self.countdown)
         else:
+            if not (self.LEFT or self.RIGHT or self.UP or self.DOWN):
+                print("ERROR")
+                exit()
+            self.refTime = time()
             self.run()
 
     def start(self):
@@ -234,12 +234,11 @@ class game:
         textEntry = self.entry.get()
         self.entry.delete(0, len(textEntry))
         try:
-            temp = int(textEntry)
-            if temp > 1 and temp <= 50:
-                self.inverseSpeed = temp
+            temp = float(textEntry)
+            if temp >= 1 and temp <= 10:
+                self.inverseSpeed = int(temp * 10)
         except ValueError:
             pass
-        self.running = True
         self.RIGHT = self.UP = self.DOWN = False
         self.lastMove = ""
         self.score = 0
@@ -248,15 +247,17 @@ class game:
         self.grid[int(self.sizeX/2)][int(self.sizeY/2)] = True
         self.snake.moveHead(SnakeLink(int(self.sizeX/2), int(self.sizeY/2)))
         self.foodX, self.foodY = self.newFood()
+        self.running = True
         self.countdown()
 
     def run(self):
         if self.running:
-            if self.count == self.inverseSpeed-1:
+            self.currTime = time()
+            if self.currTime - self.refTime >= self.inverseSpeed:
                 self.update()
-            self.count = (self.count + 1) % self.inverseSpeed
+                self.refTime = time()
             self.drawScreen()
-            self.root.after(5, self.run)
+            self.root.after(2, self.run)
         else:
             self.end()
 
@@ -270,7 +271,7 @@ class game:
         self.snake = SnakeLinks()
         self.timeToStart = 5
         self.LEFT = True
-        self.inverseSpeed = 10
+        self.inverseSpeed = 50
         for x in range(self.sizeX):
             for y in range(self.sizeY):    
                 self.grid[x][y] = False
