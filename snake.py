@@ -8,6 +8,7 @@ r = "Right"
 u = "Up"
 d = "Down"
 
+
 time = lambda: int(timer()*1000.0)
 
 class SnakeLink:
