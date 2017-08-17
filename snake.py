@@ -2,6 +2,8 @@ from tkinter import *
 from tkinter import font
 from random import choice, randint
 from time import time as timer
+from time import sleep
+import threading
 
 l = "Left"
 r = "Right"
@@ -71,11 +73,14 @@ class game:
         self.root = Tk()
         self.root.title("SNAKE!")
         #self.root.iconbitmap(default="snake.ico")
+
+        #User Configs
         self.sizeX = max(boardSizeX, 5)
         self.sizeY = max(boardSizeY, 5)
+        self.safety = safety
         self.factor = factor
-        self.smallFontFactor = 1.5
-        self.largeFontFactor = 4.5
+
+        #Internal Configs
         self.running = False
         self.score = 0
         self.grid = [[False for _ in range(self.sizeY)] for _ in range(self.sizeX)]
@@ -86,12 +91,18 @@ class game:
         self.RIGHT = False
         self.UP = False
         self.DOWN = False
-        self.inverseSpeed = 50
+        self.tickRate = 50
+        self.frameRate = 10
         self.lastMove = ""
-        self.safety = safety
         self.timeToStart = 5
-        self.refTime = -1
-        self.currTime = -1
+
+        #Child Threads
+        self.frameUpdateThread = None
+        self.tickUpdateThread = None
+
+        #UI Configs
+        self.smallFontFactor = 1.5
+        self.largeFontFactor = 4.5
 
         self.console = Frame(bg="grey")
         self.console.pack()
@@ -237,7 +248,7 @@ class game:
         try:
             temp = float(textEntry)
             if temp >= 1 and temp <= 10:
-                self.inverseSpeed = int(temp * 10)
+                self.tickRate = int(temp * 10)
         except ValueError:
             pass
         self.RIGHT = self.UP = self.DOWN = False
@@ -252,15 +263,22 @@ class game:
         self.countdown()
 
     def run(self):
-        if self.running:
-            self.currTime = time()
-            if self.currTime - self.refTime >= self.inverseSpeed:
-                self.update()
-                self.refTime = time()
-            self.drawScreen()
-            self.root.after(2, self.run)
-        else:
-            self.end()
+    	def tick():
+    		while self.running:
+	    		self.update()
+	    		sleep(self.tickRate/1000.0)
+	    	self.end()
+    	def redraw():
+    		while self.running:
+    			self.drawScreen()
+    			sleep(self.frameRate/1000.0)
+
+    	self.frameUpdateThread = threading.Thread(target=redraw)
+    	self.tickUpdateThread = threading.Thread(target=tick)
+
+    	self.frameUpdateThread.start()
+    	self.tickUpdateThread.start()
+
 
     def runningOff(self):
         self.running = False
@@ -272,7 +290,7 @@ class game:
         self.snake = SnakeLinks()
         self.timeToStart = 5
         self.LEFT = True
-        self.inverseSpeed = 50
+        self.tickRate = 50
         for x in range(self.sizeX):
             for y in range(self.sizeY):    
                 self.grid[x][y] = False
