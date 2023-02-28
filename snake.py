@@ -106,14 +106,15 @@ class game:
         self.tickUpdateThread = None
 
         #UI Configs
-        self.smallFontFactor = 1.5
-        self.largeFontFactor = 2.5
+        self.smallFontFactor = 2
+        self.largeFontFactor = 3
 
         self.console = Frame(bg="grey")
         self.console.pack()
 
-        self.appFont = font.Font(self.console, family="Arial", size=int(self.smallFontFactor*self.screenScaleFactor))
-        self.endFont = font.Font(self.console, family="Arial", size=int(self.largeFontFactor*self.screenScaleFactor))
+        self.boardSizeFontConstant = min(self.boardSizeX, self.boardSizeY)
+        self.appFont = font.Font(self.console, family="Arial", size=int(self.smallFontFactor*self.boardSizeFontConstant))
+        self.endFont = font.Font(self.console, family="Arial", size=int(self.largeFontFactor*self.boardSizeFontConstant))
 
         self.scoreBoard = Label(self.console, text="Score: " + str(self.score), fg="black", bg="grey")
         self.scoreBoard.pack(side="top")
@@ -335,7 +336,7 @@ class game:
                 self.grid[x][y] = False
         self.startButton.config(text="Start", command=self.start)
         
-snake = game(boardSizeX=40, boardSizeY=20, screenSize=1000, safety=True)
+snake = game(boardSizeX=20, boardSizeY=20, screenSize=500, safety=True)
 
 
 
