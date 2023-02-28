@@ -74,7 +74,7 @@ class game:
     def __init__(self, boardSizeX=15, boardSizeY=15, screenSize=500, safety=False):
         self.root = Tk()
         self.root.title("SNAKE!")
-        #self.root.iconbitmap(default="snake.ico")
+        self.root.iconbitmap("snake.ico")
 
         #Screen Configs
         self.screenSize = screenSize
