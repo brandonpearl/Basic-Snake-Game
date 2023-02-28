@@ -69,21 +69,26 @@ class SnakeLinks:
 
 
 class game:
-    def __init__(self, boardSizeX=15, boardSizeY=15, safety=False, factor=20):
+    def __init__(self, boardSizeX=15, boardSizeY=15, screenSize=500, safety=False):
         self.root = Tk()
         self.root.title("SNAKE!")
         #self.root.iconbitmap(default="snake.ico")
 
+        #Screen Configs
+        self.screenSize = screenSize
+
         #User Configs
-        self.sizeX = max(boardSizeX, 5)
-        self.sizeY = max(boardSizeY, 5)
+        self.boardSizeX = max(boardSizeX, 5)
+        self.boardSizeY = max(boardSizeY, 5)
         self.safety = safety
-        self.factor = factor
+
+        #Derived Scaling Factors
+        self.screenScaleFactor = float(screenSize)/float(max(self.boardSizeX, self.boardSizeY))
 
         #Internal Configs
         self.running = False
         self.score = 0
-        self.grid = [[False for _ in range(self.sizeY)] for _ in range(self.sizeX)]
+        self.grid = [[False for _ in range(self.boardSizeY)] for _ in range(self.boardSizeX)]
         self.snake = SnakeLinks()
         self.foodX = None
         self.foodY = None
@@ -102,18 +107,23 @@ class game:
 
         #UI Configs
         self.smallFontFactor = 1.5
-        self.largeFontFactor = 4.5
+        self.largeFontFactor = 2.5
 
         self.console = Frame(bg="grey")
         self.console.pack()
 
-        self.appFont = font.Font(self.console, family="Arial", size=int(self.smallFontFactor*self.factor))
-        self.endFont = font.Font(self.console, family="Arial", size=int(self.largeFontFactor*self.factor))
+        self.appFont = font.Font(self.console, family="Arial", size=int(self.smallFontFactor*self.screenScaleFactor))
+        self.endFont = font.Font(self.console, family="Arial", size=int(self.largeFontFactor*self.screenScaleFactor))
 
         self.scoreBoard = Label(self.console, text="Score: " + str(self.score), fg="black", bg="grey")
         self.scoreBoard.pack(side="top")
 
-        self.board = Canvas(self.console, bg="black",width=self.factor*self.sizeX, height=self.factor*self.sizeY)
+        self.board = Canvas(
+            self.console,
+            bg="black",
+            width=self.screenScaleFactor*self.boardSizeX,
+            height=self.screenScaleFactor*self.boardSizeY,
+        )
         self.board.pack(side="top")
 
         self.root.bind("<Key>", self.handler)
@@ -174,8 +184,8 @@ class game:
         newPos = [oldPos[0]+moveVector[0], oldPos[1]+moveVector[1]]
         tailPos = self.snake.getTailLocation()
         tailEqualNewHead = newPos[0] == tailPos[0] and newPos[1] == tailPos[1]
-        if not tailEqualNewHead and (newPos[0] >= self.sizeX or newPos[0] < 0 or \
-            newPos[1] >= self.sizeY or newPos[1] < 0 or self.grid[newPos[0]][newPos[1]]):
+        if not tailEqualNewHead and (newPos[0] >= self.boardSizeX or newPos[0] < 0 or \
+            newPos[1] >= self.boardSizeY or newPos[1] < 0 or self.grid[newPos[0]][newPos[1]]):
             self.running = False
         elif self.foodX == newPos[0] and self.foodY == newPos[1]:
             self.score += 1
@@ -193,8 +203,8 @@ class game:
 
     def newFood1(self):
         okay = []
-        boundsX = [1, self.sizeX-1] if self.safety else [0, self.sizeX]
-        boundsY = [1, self.sizeY-1] if self.safety else [0, self.sizeY]
+        boundsX = [1, self.boardSizeX-1] if self.safety else [0, self.boardSizeX]
+        boundsY = [1, self.boardSizeY-1] if self.safety else [0, self.boardSizeY]
         for x in range(boundsX[0], boundsX[1]):
             for y in range(boundsY[0], boundsY[1]):
                 if not self.grid[x][y]:
@@ -204,8 +214,8 @@ class game:
     def newFood(self):
         i = 0
         while i<1000:
-            boundsX = [1, self.sizeX-2] if self.safety else [0, self.sizeX-1]
-            boundsY = [1, self.sizeY-2] if self.safety else [0, self.sizeY-1]
+            boundsX = [1, self.boardSizeX-2] if self.safety else [0, self.boardSizeX-1]
+            boundsY = [1, self.boardSizeY-2] if self.safety else [0, self.boardSizeY-1]
             x = randint(boundsX[0], boundsX[1])
             y = randint(boundsX[0], boundsY[1])
             if not self.grid[x][y]:
@@ -215,14 +225,30 @@ class game:
 
     def drawScreen(self):
         self.board.delete(ALL)
-        for x in range(self.sizeX):
-            for y in range(self.sizeY):
+        for x in range(self.boardSizeX):
+            for y in range(self.boardSizeY):
                 if self.grid[x][y]:
-                    self.board.create_rectangle(x*self.factor, y*self.factor, (x+1)*self.factor, (y+1)*self.factor, fill="green")
+                    self.board.create_rectangle(
+                        x*self.screenScaleFactor,
+                        y*self.screenScaleFactor,
+                        (x+1)*self.screenScaleFactor,
+                        (y+1)*self.screenScaleFactor,
+                        fill="green",
+                    )
         x, y = self.snake.getHeadLocation()
-        self.board.create_rectangle(x*self.factor, y*self.factor, (x+1)*self.factor, (y+1)*self.factor, fill="#556B2F")
+        self.board.create_rectangle(
+            x*self.screenScaleFactor,
+            y*self.screenScaleFactor,
+            (x+1)*self.screenScaleFactor,
+            (y+1)*self.screenScaleFactor, fill="#556B2F")
         if self.foodX >= 0 and self.foodY >= 0:
-            self.board.create_rectangle(self.foodX*self.factor, self.foodY*self.factor, (self.foodX+1)*self.factor, (self.foodY+1)*self.factor, fill="red")
+            self.board.create_rectangle(
+                self.foodX*self.screenScaleFactor,
+                self.foodY*self.screenScaleFactor,
+                (self.foodX+1)*self.screenScaleFactor,
+                (self.foodY+1)*self.screenScaleFactor,
+                fill="red",
+            )
 
     def null(self):
         return
@@ -230,8 +256,13 @@ class game:
     def countdown(self):
         if self.timeToStart > 0:
             self.drawScreen()
-            self.board.create_text(int(self.sizeX/2)*self.factor, int(self.sizeY/2)*self.factor, fill="white", \
-                 text=str(self.timeToStart) if self.timeToStart > 1 else "Fun!", font=self.appFont)
+            self.board.create_text(
+                int(self.boardSizeX/2)*self.screenScaleFactor,
+                int(self.boardSizeY/2)*self.screenScaleFactor,
+                fill="white",
+                text=str(self.timeToStart) if self.timeToStart > 1 else "Fun!",
+                font=self.appFont,
+            )
             self.timeToStart -= 1
             self.root.after(1000, self.countdown)
         else:
@@ -256,28 +287,29 @@ class game:
         self.score = 0
         self.startButton.config(text="Running", command=self.null)
         self.scoreBoard.config(text="Score: " + str(self.score))
-        self.grid[int(self.sizeX/2)][int(self.sizeY/2)] = True
-        self.snake.moveHead(SnakeLink(int(self.sizeX/2), int(self.sizeY/2)))
+        self.grid[int(self.boardSizeX/2)][int(self.boardSizeY/2)] = True
+        self.snake.moveHead(SnakeLink(int(self.boardSizeX/2), int(self.boardSizeY/2)))
         self.foodX, self.foodY = self.newFood()
         self.running = True
         self.countdown()
 
     def run(self):
-    	def tick():
-    		while self.running:
-	    		self.update()
-	    		sleep(self.tickRate/1000.0)
-	    	self.end()
-    	def redraw():
-    		while self.running:
-    			self.drawScreen()
-    			sleep(self.frameRate/1000.0)
+        def tick():
+            while self.running:
+                self.update()
+                sleep(self.tickRate/1000.0)
+            self.end()
 
-    	self.frameUpdateThread = threading.Thread(target=redraw)
-    	self.tickUpdateThread = threading.Thread(target=tick)
+        def redraw():
+            while self.running:
+                self.drawScreen()
+                sleep(self.frameRate/1000.0)
 
-    	self.frameUpdateThread.start()
-    	self.tickUpdateThread.start()
+        self.frameUpdateThread = threading.Thread(target=redraw)
+        self.tickUpdateThread = threading.Thread(target=tick)
+
+        self.frameUpdateThread.start()
+        self.tickUpdateThread.start()
 
 
     def runningOff(self):
@@ -285,18 +317,25 @@ class game:
         
     def end(self):
         self.board.delete(ALL)
-        self.board.create_text(int(self.sizeX/2)*self.factor, int(self.sizeY/2)*self.factor, fill="white", \
-                 text="GAME OVER", font=self.endFont)
+        self.board.create_text(
+            int(self.boardSizeX/2)*self.screenScaleFactor,
+            int(self.boardSizeY/2)*self.screenScaleFactor,
+            fill="white",
+            text="GAME OVER",
+            font=self.endFont,
+            anchor="center",
+            width=self.screenScaleFactor*self.boardSizeX,
+        )
         self.snake = SnakeLinks()
         self.timeToStart = 5
         self.LEFT = True
         self.tickRate = 50
-        for x in range(self.sizeX):
-            for y in range(self.sizeY):    
+        for x in range(self.boardSizeX):
+            for y in range(self.boardSizeY):    
                 self.grid[x][y] = False
         self.startButton.config(text="Start", command=self.start)
         
-snake = game(50, 30, True)
+snake = game(boardSizeX=40, boardSizeY=20, screenSize=1000, safety=True)
 
 
 
