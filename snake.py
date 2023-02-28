@@ -1,9 +1,11 @@
+import threading
+from argparse import ArgumentParser
+from argparse import Action
 from tkinter import *
 from tkinter import font
 from random import choice, randint
 from time import time as timer
 from time import sleep
-import threading
 
 l = "Left"
 r = "Right"
@@ -142,7 +144,6 @@ class game:
         self.leaveButton.pack(side="right")
 
         self.root.lift()
-        self.root.mainloop()
 
     def handler(self, event):
         if not self.running:
@@ -335,9 +336,36 @@ class game:
             for y in range(self.boardSizeY):    
                 self.grid[x][y] = False
         self.startButton.config(text="Start", command=self.start)
-        
-snake = game(boardSizeX=20, boardSizeY=20, screenSize=500, safety=True)
+
+    def beginGameLoop(self):
+        self.root.mainloop()
 
 
+if __name__ == "__main__":
+    print("Getting Command-line Arguments")
+    parser = ArgumentParser()
+    parser.add_argument(
+        "-x", "--x", type=int, help="Number of board tiles along x-axis", dest="boardSizeX", default=20,
+    )
+    parser.add_argument(
+        "-y", "--y", type=int, help="Number of board tiles along y-axis", dest="boardSizeY", default=20,
+    )
+    parser.add_argument(
+        "-size", "--size", type=int, help="Size (in pixels) of the longest side of the board", dest="screenSize", default=500,
+    )
+    parser.add_argument(
+        "-s", "--no-safety", action="store_false", help="Whether to allow food to spawn in the outer ring", dest="safety",
+    )
+    arguments = parser.parse_args()
+    print(arguments)
 
+    print("Initializing Snake")
+    snake = game(
+        boardSizeX=arguments.boardSizeX,
+        boardSizeY=arguments.boardSizeY,
+        screenSize=arguments.screenSize,
+        safety=arguments.safety,
+    )
 
+    print("Starting Main Loop")
+    snake.beginGameLoop()
